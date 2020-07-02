@@ -2,39 +2,59 @@ import React, { Component } from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 
-import { setMessages } from '../actions';
+import { fetchMessages } from '../actions';
 import Message from '../components/message';
+import MessageForm from '../containers/message_form';
 
 class MessageList extends Component {
   componentWillMount() {
-    this.setMessages();
+    this.fetchMessages();
   }
 
-  setMessages = () => {
-    this.props.setMessages(this.props.selectedChannel);
+  componentDidMount() {
+    this.refresher = setInterval(this.fetchMessages, 5000);
   }
 
-  render() {
+  componentDidUpdate() {
+    this.list.scrollTop = this.list.scrollHeight;
+  }
+
+  componentWillUnmount() {
+    clearInterval(this.refresher);
+  }
+
+  fetchMessages = () => {
+    this.props.fetchMessages(this.props.selectedChannel);
+  }
+
+  render () {
     return (
-      <div className="message-list col-sm-7">
-        {
-          this.props.messages.map((message) => {
-            return <Message key={message.id} message={message} />;
-          })
-        }
+      <div className="channel-container">
+        <div className="channel-title">
+          <span>Channel #{this.props.selectedChannel}</span>
+        </div>
+        <div className="channel-content" ref={(list) => { this.list = list; }}>
+          {
+            this.props.messages.map((message) => {
+              return <Message key={message.id} message={message} />;
+            })
+          }
+        </div>
+        <MessageForm />
       </div>
     );
   }
 }
 
-function mapDispatchToProps(dispatch) {
-  return bindActionCreators({ setMessages }, dispatch);
-}
-
 function mapStateToProps(state) {
   return {
-    messages: state.messages
+    messages: state.messages,
+    selectedChannel: state.selectedChannel
   };
+}
+
+function mapDispatchToProps(dispatch) {
+  return bindActionCreators({ fetchMessages }, dispatch);
 }
 
 export default connect(mapStateToProps, mapDispatchToProps)(MessageList);
